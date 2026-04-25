@@ -2,69 +2,103 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Monitor CB - Triadas 5M</title>
+    <title>Monitor de Triadas Real - 5M</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0f111a; color: #ffffff; padding: 20px; margin: 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .card { background: #1c1f2b; border-radius: 8px; padding: 15px; border-top: 4px solid #444; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e14; color: #ffffff; padding: 20px; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .card { background: #161b22; border-radius: 8px; padding: 15px; border-top: 4px solid #30363d; position: relative; }
         .boom { border-top-color: #00ff88; }
         .crash { border-top-color: #ff4444; }
-        .symbol { font-size: 1.2rem; font-weight: bold; color: #9da5b4; }
-        .price { font-family: 'Consolas', monospace; font-size: 1.6rem; margin: 10px 0; color: #00d4ff; }
-        .alert { background: #ce900033; border: 1px solid #ffcc00; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .info { font-size: 0.8rem; color: #6b7280; }
+        .symbol { font-size: 1.1rem; font-weight: bold; color: #8b949e; }
+        .price { font-family: 'Consolas', monospace; font-size: 1.5rem; margin: 10px 0; color: #58a6ff; }
+        .alert { background: #26210b; border: 1px solid #ffcc00; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 204, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 204, 0, 0); } }
+        .info { font-size: 0.85rem; color: #8b949e; line-height: 1.4; }
+        .val { color: #ffffff; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2 style="text-align:center;">🚀 Monitor de Triadas (Directo API)</h2>
+    <h2 style="text-align:center; color: #00ff88;">🛰️ Radar de Triadas Real (Velas 5M)</h2>
     <div class="grid" id="grid"></div>
 
     <script>
-        const symbols = [
+        const assets = [
             {id: 'BOOM150', name: 'Boom 150', type: 'boom'}, {id: '1HZ300V', name: 'Boom 300N', type: 'boom'},
-            {id: 'BOOM500', name: 'Boom 500', type: 'boom'}, {id: 'BOOM600', name: 'Boom 600', type: 'boom'},
-            {id: 'BOOM900', name: 'Boom 900', type: 'boom'}, {id: 'BOOM1000', name: 'Boom 1000', type: 'boom'},
+            {id: 'BOOM500', name: 'Boom 500', type: 'boom'}, {id: 'BOOM1000', name: 'Boom 1000', type: 'boom'},
             {id: 'CRASH150', name: 'Crash 150', type: 'crash'}, {id: '1HZ300UV', name: 'Crash 300N', type: 'crash'},
-            {id: 'CRASH500', name: 'Crash 500', type: 'crash'}, {id: 'CRASH600', name: 'Crash 600', type: 'crash'},
-            {id: 'CRASH900', name: 'Crash 900', type: 'crash'}, {id: 'CRASH1000', name: 'Crash 1000', type: 'crash'}
+            {id: 'CRASH500', name: 'Crash 500', type: 'crash'}, {id: 'CRASH1000', name: 'Crash 1000', type: 'crash'}
         ];
 
-        const grid = document.getElementById('grid');
         const ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-
-        // Crear tarjetas
-        symbols.forEach(s => {
-            const div = document.createElement('div');
-            div.className = `card ${s.type}`;
-            div.id = `card-${s.id}`;
-            div.innerHTML = `<div class="symbol">${s.name}</div><div class="price" id="price-${s.id}">Conectando...</div><div class="info" id="info-${s.id}">Buscando triada...</div>`;
-            grid.appendChild(div);
-        });
+        const store = {};
 
         ws.onopen = () => {
-            symbols.forEach(s => {
-                ws.send(JSON.stringify({ "ticks": s.id, "subscribe": 1 }));
+            assets.forEach(s => {
+                const div = document.createElement('div');
+                div.className = `card ${s.type}`;
+                div.id = `card-${s.id}`;
+                div.innerHTML = `<div class="symbol">${s.name}</div><div class="price" id="price-${s.id}">...</div><div class="info" id="info-${s.id}">Calculando tendencia...</div>`;
+                document.getElementById('grid').appendChild(div);
+
+                // Pedimos el historial de 50 velas de 5 minutos para calcular la línea
+                ws.send(JSON.stringify({ "ticks_history": s.id, "end": "latest", "style": "candles", "granularity": 300, "count": 50, "subscribe": 1 }));
             });
         };
 
         ws.onmessage = (msg) => {
             const data = JSON.parse(msg.data);
-            if (data.tick) {
-                const id = data.tick.symbol;
-                const price = data.tick.quote;
-                document.getElementById(`price-${id}`).innerText = price;
-                
-                // Simulación de detección para que veas el resultado visual
-                if (price.toString().slice(-1) === "5") { // Alerta visual de prueba
-                    document.getElementById(`card-${id}`).classList.add('alert');
-                    document.getElementById(`info-${id}`).innerText = "ZONA DE REACCIÓN";
-                } else {
-                    document.getElementById(`card-${id}`).classList.remove('alert');
-                    document.getElementById(`info-${id}`).innerText = "Escaneando tendencia...";
+            
+            if (data.candles) {
+                store[data.req_id || data.echo_req.ticks_history] = data.candles;
+                analizar(data.echo_req.ticks_history);
+            }
+
+            if (data.ohlc) {
+                const id = data.ohlc.symbol;
+                document.getElementById(`price-${id}`).innerText = data.ohlc.close;
+                if (store[id]) {
+                    store[id][store[id].length - 1] = data.ohlc;
+                    analizar(id);
                 }
             }
         };
+
+        function analizar(id) {
+            const candles = store[id];
+            if (!candles || candles.length < 10) return;
+
+            const asset = assets.find(a => a.id === id);
+            // Buscamos los dos últimos picos (Fractales)
+            let picos = [];
+            for (let i = 2; i < candles.length - 2; i++) {
+                if (asset.type === 'boom') {
+                    if (candles[i].low < candles[i-1].low && candles[i].low < candles[i-2].low && candles[i].low < candles[i+1].low && candles[i].low < candles[i+2].low) picos.push({x: i, y: parseFloat(candles[i].low)});
+                } else {
+                    if (candles[i].high > candles[i-1].high && candles[i].high > candles[i-2].high && candles[i].high > candles[i+1].high && candles[i].high > candles[i+2].high) picos.push({x: i, y: parseFloat(candles[i].high)});
+                }
+            }
+
+            if (picos.length >= 2) {
+                const p1 = picos[picos.length - 2];
+                const p2 = picos[picos.length - 1];
+                const m = (p2.y - p1.y) / (p2.x - p1.x);
+                const b = p1.y - (m * p1.x);
+                const proyeccion = (m * (candles.length - 1)) + b;
+                const precioActual = parseFloat(candles[candles.length - 1].close);
+                const distancia = Math.abs(precioActual - proyeccion);
+
+                const info = document.getElementById(`info-${id}`);
+                const card = document.getElementById(`card-${id}`);
+                
+                info.innerHTML = `P1: <span class="val">${p1.y.toFixed(2)}</span> | P2: <span class="val">${p2.y.toFixed(2)}</span><br>Proyección: <span class="val">${proyeccion.toFixed(2)}</span>`;
+
+                if (distancia < 1.5) { // Umbral de cercanía real
+                    card.classList.add('alert');
+                } else {
+                    card.classList.remove('alert');
+                }
+            }
+        }
     </script>
 </body>
 </html>
