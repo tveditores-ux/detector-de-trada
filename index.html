@@ -1,23 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Panel de Triadas 1M</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Triadas 5M</title>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
-        .card { background: #1e1e1e; padding: 15px; border-radius: 8px; border-left: 5px solid #333; }
-        .card.alerta { border-left-color: #ffcc00; background: #2d2610; animation: pulse 1s infinite; }
-        .symbol { font-weight: bold; color: #aaa; }
-        .price { font-size: 1.4em; color: #00ff88; margin: 10px 0; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        body { background: #0b0e14; color: #e1e1e1; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        h1 { color: #00ff88; text-align: center; font-size: 1.5rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; }
+        .card { background: #161b22; border-radius: 10px; padding: 15px; border: 1px solid #30363d; transition: 0.3s; }
+        .card.alerta { border-color: #ffcc00; background: #26210b; box-shadow: 0 0 15px rgba(255, 204, 0, 0.2); }
+        .symbol { font-weight: bold; font-size: 1.1rem; color: #8b949e; }
+        .price { font-size: 1.6rem; color: #58a6ff; margin: 10px 0; font-family: monospace; }
+        .info { font-size: 0.85rem; color: #8b949e; line-height: 1.6; }
+        .status-alert { color: #ffcc00; font-weight: bold; display: none; }
+        .card.alerta .status-alert { display: block; }
     </style>
 </head>
 <body>
-    <h1>🚀 Monitoreo de Triadas (Frecuencia: 1 min)</h1>
+    <h1>📊 Dashboard de Triadas (Frecuencia 1m)</h1>
     <div class="grid" id="main-grid"></div>
 
     <script>
-        function refreshData() {
+        function refresh() {
             fetch('/update')
                 .then(res => res.json())
                 .then(data => {
@@ -28,16 +33,19 @@
                         card.className = `card ${item.alerta ? 'alerta' : ''}`;
                         card.innerHTML = `
                             <div class="symbol">${item.id}</div>
-                            <div class="price">${item.precio}</div>
-                            <div>Proyección: ${item.proyeccion}</div>
-                            <div style="font-size: 0.8em">Distancia: ${item.distancia} pips</div>
+                            <div class="price">${item.precio.toFixed(2)}</div>
+                            <div class="info">
+                                <div>Proyección: <b>${item.proyeccion}</b></div>
+                                <div>Distancia: ${item.distancia} pips</div>
+                                <div class="status-alert">⚠️ ¡CERCANÍA DETECTADA!</div>
+                            </div>
                         `;
                         grid.appendChild(card);
                     });
                 });
         }
-        setInterval(refreshData, 60000); // Actualiza cada 60 segundos
-        refreshData(); // Carga inicial
+        setInterval(refresh, 60000); // Actualización cada minuto
+        refresh();
     </script>
 </body>
 </html>
