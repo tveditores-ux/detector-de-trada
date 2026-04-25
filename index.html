@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Panel de Triadas 1M</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .card { background: #1e1e1e; padding: 15px; border-radius: 8px; border-left: 5px solid #333; }
+        .card.alerta { border-left-color: #ffcc00; background: #2d2610; animation: pulse 1s infinite; }
+        .symbol { font-weight: bold; color: #aaa; }
+        .price { font-size: 1.4em; color: #00ff88; margin: 10px 0; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <h1>🚀 Monitoreo de Triadas (Frecuencia: 1 min)</h1>
+    <div class="grid" id="main-grid"></div>
+
+    <script>
+        function refreshData() {
+            fetch('/update')
+                .then(res => res.json())
+                .then(data => {
+                    const grid = document.getElementById('main-grid');
+                    grid.innerHTML = '';
+                    data.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = `card ${item.alerta ? 'alerta' : ''}`;
+                        card.innerHTML = `
+                            <div class="symbol">${item.id}</div>
+                            <div class="price">${item.precio}</div>
+                            <div>Proyección: ${item.proyeccion}</div>
+                            <div style="font-size: 0.8em">Distancia: ${item.distancia} pips</div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                });
+        }
+        setInterval(refreshData, 60000); // Actualiza cada 60 segundos
+        refreshData(); // Carga inicial
+    </script>
+</body>
+</html>
